@@ -1,250 +1,143 @@
-from models.tasks import add_task, get_all_tasks, filter_tasks, Task
-from models.users import add_user, get_all_users, filter_users, User
-from models.workproject import add_project, get_all_projects, filter_projects, Project
-from models import Session
-from helpers import exit_program, print_table,validate_date
-from datetime import datetime
-
-
-# .................................
-
-
-session = Session()
+# cli.py
+from operations import create_user, read_users, update_user, delete_user
+from operations import create_project, read_projects, update_project, delete_project
+from operations import create_task, read_tasks, update_task, delete_task
 
 def main():
     while True:
-        menu()
-        choice = input("> ")
-        if choice == "0":
-            exit_program()
-        elif choice == "1":
-            add_task_app()
+        print("\nTask Management System")
+        print("1. Add User")
+        print("2. View Users")
+        print("3. Update User")
+        print("4. Delete User")
+        print("5. Add Project")
+        print("6. View Projects")
+        print("7. Update Project")
+        print("8. Delete Project")
+        print("9. Add Task")
+        print("10. View Tasks")
+        print("11. Update Task")
+        print("12. Delete Task")
+        print("0. Exit")
+        choice = input("Enter choice: ")
+
+        if choice == "1":
+            add_user()
         elif choice == "2":
-            add_user_app()
-        elif choice == "3":
-            add_project_app()
-        elif choice == "4":
-            view_tasks()
-        elif choice == "5":
-            view_projects()
-        elif choice == "6":
             view_users()
+        elif choice == "3":
+            update_user_cli()
+        elif choice == "4":
+            delete_user_cli()
+        elif choice == "5":
+            add_project()
+        elif choice == "6":
+            view_projects()
         elif choice == "7":
-            filter_menu()
+            update_project_cli()
+        elif choice == "8":
+            delete_project_cli()
+        elif choice == "9":
+            add_task()
+        elif choice == "10":
+            view_tasks()
+        elif choice == "11":
+            update_task_cli()
+        elif choice == "12":
+            delete_task_cli()
+        elif choice == "0":
+            break
         else:
-            print("Invalid choice")
-            
+            print("Invalid choice, please try again.")
 
-def menu():
-    print("Please select an option:")
-    print("0. Exit the program")
-    print("1. Add task")
-    print("2. Add user")
-    print("3. Add project")
-    print("4. View all tasks")
-    print("5. View all projects")
-    print("6. View all users")
-    print("7. Filter data")
-    print()
-
-def filter_menu():
-    print("Filter options:")
-    print("1. Filter tasks")
-    print("2. Filter users")
-    print("3. Filter projects")
-    choice = input("> ")
-
-    if choice == "1":
-        filter_tasks_app()
-    elif choice == "2":
-        filter_users_app()
-    elif choice == "3":
-        filter_projects_app()
-    else:
-        print("Invalid choice")
-
-def filter_tasks_app():
-    print("Enter filter criteria for tasks (leave blank to skip a criterion):")
-    title = input("Title: ")
-    due_date = input("Due date (YYYY-MM-DD): ")
-    priority = input("Priority (1 for high, 2 for medium, 3 for low): ")
-
-    filters = {}
-    if title:
-        filters['title'] = title
-    if due_date and validate_date(due_date):
-        filters['due_date'] = datetime.strptime(due_date, "%Y-%m-%d").date()
-    if priority and priority.isdigit() and int(priority) in [1, 2, 3]:
-        filters['priority'] = int(priority)
-
-    tasks = filter_tasks(filters)
-    if tasks:
-        print("Filtered tasks:")
-        print_table(["ID", "Title", "Description", "Due Date", "Priority", "User ID", "Project ID"], tasks)
-    else:
-        print("No tasks found with the given criteria.")
-
-
-# cli.py
-
-def filter_users_app():
-    print("Enter filter criteria for users (leave blank to skip a criterion):")
-    username = input("Username: ")
-    email = input("Email: ")
-
-    filters = {}
-    if username:
-        filters['username'] = username
-    if email:
-        filters['email'] = email
-
-    users = filter_users(**filters)  # Passing filters as keyword arguments
-    if users:
-        if isinstance(users, list):
-            print("Filtered users:")
-            print_table(["ID", "Username", "Email"], [(user.id, user.username, user.email) for user in users])
-        else:
-            # If only one user is found, convert it to a list with one element
-            print("Filtered users:")
-            print_table(["ID", "Username", "Email"], [(users.id, users.username, users.email)])
-    else:
-        print("No users found with the given criteria.")
-
-
-def filter_projects_app():
-    print("Enter filter criteria for projects (leave blank to skip a criterion):")
-    name = input("Project name: ")
-
-    filters = {}
-    if name:
-        filters['name'] = name
-
-    projects = filter_projects(filters)
-    if projects:
-        if isinstance(projects, list):
-            print("Filtered projects:")
-            print_table(["ID", "Name", "Description"], [(project.id, project.name, project.description) for project in projects])
-        else:
-            # If only one project is found, convert it to a list with one element
-            print("Filtered projects:")
-            print_table(["ID", "Name", "Description"], [(projects.id, projects.name, projects.description)])
-    else:
-        print("No projects found with the given criteria.")
-
-def add_task_app():
-    print("Enter task details:")
-    title = input("Title: ")
-    description = input("Description: ")
-    due_date = input("Due date (YYYY-MM-DD): ")
-    priority = input("Priority (1 for high, 2 for medium, 3 for low): ")
-
-    if not title:
-        print("Title is required.")
-        return
-
-    due_date_obj = None
-    if due_date:
-        if not validate_date(due_date):
-            print("Invalid date format. Please use YYYY-MM-DD.")
-            return
-        due_date_obj = datetime.strptime(due_date, "%Y-%m-%d").date()
-
-    if not priority or not priority.isdigit() or int(priority) not in [1, 2, 3]:
-        print("Invalid priority. Please enter 1 for high, 2 for medium, or 3 for low.")
-        return
-
-    # Add the task using the provided details, without user_id and project_id
-    add_task(title, description, due_date_obj, int(priority))
-    print("Task added successfully.")
-
-
-def add_user_app():
-    print("Enter user details:")
-    username = input("Username: ")
-    email = input("Email: ")
-
-    if not username:
-        print("Username is required.")
-        return
-
-    if not email:
-        print("Email is required.")
-        return
-
-    add_user(username, email)
-    print("User added successfully.")
-
-def add_project_app():
-    print("Enter project details:")
-    name = input("Project name: ")
-    description = input("Project description: ")
-
-    if not name:
-        print("Project name is required.")
-        return
-
-    add_project(name, description)
-    print("Project added successfully.")
-
-def view_tasks():
-    tasks = get_all_tasks()
-    if tasks:
-        print("Tasks:")
-        headers = ["ID", "Title", "Description", "Due Date", "Priority"]
-        rows = [(task.id, task.title, task.description, task.due_date, task.priority) for task in tasks]
-        print_table(headers, rows)
-    else:
-        print("No tasks found.")
-
-
-# cli.py
+def add_user():
+    username = input("Enter username: ")
+    email = input("Enter email: ")
+    create_user(username, email)
+    print("User added successfully!")
 
 def view_users():
-    users = get_all_users()
+    users = read_users()
     if users:
-        print("Users:")
-        print_table(["ID", "Username", "Email"], [(user.id, user.username, user.email) for user in users])
+        print("\nUsers:")
+        for user in users:
+            print(f"ID: {user[0]}, Username: {user[1]}, Email: {user[2]}")
     else:
         print("No users found.")
 
+def update_user_cli():
+    user_id = int(input("Enter user ID: "))
+    username = input("Enter new username: ")
+    email = input("Enter new email: ")
+    update_user(user_id, username, email)
+    print("User updated successfully!")
+
+def delete_user_cli():
+    user_id = int(input("Enter user ID to delete: "))
+    delete_user(user_id)
+    print("User deleted successfully!")
+
+def add_project():
+    name = input("Enter project name: ")
+    description = input("Enter project description: ")
+    create_project(name, description)
+    print("Project added successfully!")
+
 def view_projects():
-    projects = get_all_projects()
+    projects = read_projects()
     if projects:
-        print("Projects:")
-        print_table(["ID", "Name", "Description"], [(project.id, project.name, project.description) for project in projects])
+        print("\nProjects:")
+        for project in projects:
+            print(f"ID: {project[0]}, Name: {project[1]}, Description: {project[2]}")
     else:
         print("No projects found.")
 
+def update_project_cli():
+    project_id = int(input("Enter project ID: "))
+    name = input("Enter new project name: ")
+    description = input("Enter new project description: ")
+    update_project(project_id, name, description)
+    print("Project updated successfully!")
 
-# def view_tasks_with_details():
-#     from sqlalchemy import join
+def delete_project_cli():
+    project_id = int(input("Enter project ID to delete: "))
+    delete_project(project_id)
+    print("Project deleted successfully!")
 
-#     # Define the join conditions explicitly
-#     task_user_join = join(Task, User, Task.user_id == User.id)
-#     task_project_join = join(task_user_join, Project, Task.project_id == Project.id)
+def add_task():
+    title = input("Enter task title: ")
+    description = input("Enter task description: ")
+    due_date = input("Enter due date (YYYY-MM-DD): ")
+    priority = int(input("Enter priority (1-5): "))
+    user_id = int(input("Enter user ID assigned to the task: "))
+    project_id = int(input("Enter project ID for the task: "))
+    create_task(title, description, due_date, priority, user_id, project_id)
+    print("Task added successfully!")
 
-#     # Query with the explicit join
-#     tasks = session.query(
-#         Task.id,
-#         Task.title,
-#         Task.description,
-#         Task.due_date,
-#         Task.priority,
-#         User.id.label('user_id'),
-#         User.username,
-#         Project.id.label('project_id'),
-#         Project.name
-#     ).select_from(task_project_join).all()
+def view_tasks():
+    tasks = read_tasks()
+    if tasks:
+        print("\nTasks:")
+        for task in tasks:
+            print(f"ID: {task[0]}, Title: {task[1]}, Description: {task[2]}, Due Date: {task[3]}, Priority: {task[4]}, User ID: {task[5]}, Project ID: {task[6]}")
+    else:
+        print("No tasks found.")
 
-#     if tasks:
-#         print("Tasks with details:")
-#         headers = ["Task ID", "Title", "Description", "Due Date", "Priority", "User ID", "Username", "Project ID", "Project Name"]
-#         rows = [(task.id, task.title, task.description, task.due_date, task.priority, task.user_id, task.username, task.project_id, task.name) for task in tasks]
-#         print_table(headers, rows)
-#     else:
-#         print("No tasks found.")
+def update_task_cli():
+    task_id = int(input("Enter task ID: "))
+    title = input("Enter new task title: ")
+    description = input("Enter new task description: ")
+    due_date = input("Enter new due date (YYYY-MM-DD): ")
+    priority = int(input("Enter new priority (1-5): "))
+    user_id = int(input("Enter new user ID assigned to the task: "))
+    project_id = int(input("Enter new project ID for the task: "))
+    update_task(task_id, title, description, due_date, priority, user_id, project_id)
+    print("Task updated successfully!")
 
-
+def delete_task_cli():
+    task_id = int(input("Enter task ID to delete: "))
+    delete_task(task_id)
+    print("Task deleted successfully!")
 
 if __name__ == "__main__":
     main()
